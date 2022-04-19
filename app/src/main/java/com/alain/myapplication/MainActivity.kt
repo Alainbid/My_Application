@@ -14,7 +14,7 @@ class MainActivity : AppCompatActivity() {
 
         val btnConex: Button = this.findViewById<Button>(R.id.btn_connexion)
         btnConex.setOnClickListener {
-            val laConnexion: Intent = Intent(this, Connexion::class.java)
+            val laConnexion = Intent(this, Connexion::class.java)
             laConnexion.putExtra("url", "192.168.1.47")
             val res = startActivity(laConnexion)
 
