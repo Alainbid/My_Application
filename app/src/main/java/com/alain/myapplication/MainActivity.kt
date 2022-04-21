@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.io.BufferedInputStream
 import java.io.BufferedReader
@@ -13,9 +14,9 @@ import java.net.URL
 import kotlin.properties.Delegates
 import kotlin.system.measureTimeMillis
 
-var data: String = "Temperature 00.00 Humidite 00.00 duree 1 frequence 0.00 xxx"
-var runningThread: Boolean = true
-var tps by Delegates.notNull<Long>()
+var data: String = " "//"Temperature 00.00 Humidite 00.00 duree 1 frequence 0.00 xxx"
+var err: String = " "
+var runningThread = true
 
 //testée une fois de plus
 class MainActivity : AppCompatActivity() {
@@ -25,31 +26,40 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         val txduree = findViewById<TextView>(R.id.tx_duree)
         val txfreq = findViewById<TextView>(R.id.tx_freq)
-        val btnConex = this.findViewById<Button>(R.id.btn_connexion)
+        val btnClose = this.findViewById<Button>(R.id.btn_connexion)
+        val url = URL("http://192.168.1.47/")
+
+        var tps by Delegates.notNull<Long>()
+
 
         val monThread = Thread {
-            val url = URL("http://192.168.1.47/")
+
             tps = measureTimeMillis {
-//            if (!runningThread) {
-//                return@Thread
-//            }
                 try {
                     val httpClient = url.openConnection() as HttpURLConnection
+
                     if (httpClient.responseCode == HttpURLConnection.HTTP_OK) {
                         try {
                             val stream = BufferedInputStream(httpClient.inputStream)
                             readStream(inputStream = stream)
                         } catch (e: Exception) {
+                            err = "pas de readStream"
                             e.printStackTrace()
+                            println("err $e")
+
 
                         } finally {
                             httpClient.disconnect()
                         }
                     } else {
+                        err = "pas de connexion"
                         println("---------------------ERROR ${httpClient.responseCode}")
                     }
                 } catch (e: Error) {
+                    runningThread = false
                     println(" --------------------code erreur :$e")
+                    err = e.toString()
+
 
                 } finally {
                     println("--------------------Connexion  terminée")
@@ -59,15 +69,12 @@ class MainActivity : AppCompatActivity() {
             }
         }//*************************fin du Thread
         departThread(monThread)
-        // une fois le thread terminé le bouton connexion est visible
 
         while (monThread.isAlive) {
             runningThread = true
         }
+        Toast.makeText(this, "resultat de connexion :  $url  $err", Toast.LENGTH_LONG).show()
         println(" ----------------duree du thread = $tps")
-        btnConex.setOnClickListener {
-            finishAndRemoveTask()
-        }
         println(" -------------------thread alive = " + monThread.isAlive)
         var position: List<Int> = data.indexesOf("humidi", true)
         findViewById<TextView>(R.id.tx_humid).text =
@@ -86,6 +93,10 @@ class MainActivity : AppCompatActivity() {
         z = tx.length
         txfreq.text = "toutes les " + tx.substring(z - 3) + " heures"
 
+
+        btnClose.setOnClickListener {
+            finishAndRemoveTask()
+        }
     }
 }
 
